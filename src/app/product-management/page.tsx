@@ -2,7 +2,8 @@
 
 import Breadcrumb from "@components/Breadcrumbs/Breadcrumb";
 import { Tabs, Tab } from "@heroui/tabs";
-import { useState } from "react";
+import { bazaarApiGet } from "@utils/api-helper";
+import { useEffect, useState } from "react";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<any>("allproducts");
@@ -14,6 +15,13 @@ export default function Page() {
     outOfStockProducts: 0,
     lowStockProducts: 0,
   });
+
+  useEffect(() => {
+    bazaarApiGet("/products").then((res) => {
+      console.log("Product counts:", res);
+    });
+  }, []);
+
   return (
     <div className="w-full">
       <Breadcrumb pageName="Product Management" />

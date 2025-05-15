@@ -73,7 +73,7 @@ export function Sidebar() {
             {[
               { href: "/overview", icon: OverviewIcon, label: "Overview" },
               {
-                href: "/orders-returns",
+                href: "/order-management",
                 icon: OrdersReturnsIcon,
                 label: "Orders & Returns",
               },

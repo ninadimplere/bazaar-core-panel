@@ -3,9 +3,9 @@ import type { PropsWithChildren } from "react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Bazaar - Order Management",
+  title: "Bazaar - Product Management",
   description:
-    "Manage your orders efficiently with Bazaar's order management tools.",
+    "Manage your products efficiently with Bazaar's product management tools.",
 };
 
 export default function Layout({ children }: PropsWithChildren) {
