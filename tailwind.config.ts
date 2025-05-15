@@ -1,8 +1,13 @@
+import { heroui } from "@heroui/react";
 import type { Config } from "tailwindcss";
 import defaultTheme from "tailwindcss/defaultTheme";
 
+/** @type {import('tailwindcss').Config} */
 const config: Config = {
-  content: ["./src/**/*.{js,jsx,tsx}"],
+  content: [
+    "./src/**/*.{js,jsx,tsx}",
+    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+  ],
   darkMode: ["class"],
   theme: {
     extend: {
@@ -18,8 +23,12 @@ const config: Config = {
         current: "currentColor",
         transparent: "transparent",
         white: "#FFFFFF",
-        primary: "#5750F1",
-        stroke: "#E6EBF1",
+        primary: "#004155",
+        stroke: "#E5F8F5",
+        secondary: "#00BB9E",
+        default: "#E5F8F5",
+        "secondary-light": "#E5F8F5",
+        "secondary-dark": "#004155",
         "stroke-dark": "#27303E",
         dark: {
           DEFAULT: "#111928",
@@ -377,6 +386,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [heroui()],
 };
 export default config;

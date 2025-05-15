@@ -1,4 +1,4 @@
-import { TrashIcon } from "@/assets/icons";
+import { TrashIcon } from "@assets/icons";
 import {
   Table,
   TableBody,
@@ -6,8 +6,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+} from "@components/ui/table";
+import { cn } from "@lib/utils";
 import dayjs from "dayjs";
 import { getInvoiceTableData } from "./fetch";
 import { DownloadIcon, PreviewIcon } from "./icons";
