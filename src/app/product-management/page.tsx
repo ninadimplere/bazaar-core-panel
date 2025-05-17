@@ -4,6 +4,7 @@ import Breadcrumb from "@components/Breadcrumbs/Breadcrumb";
 import { Tabs, Tab } from "@heroui/tabs";
 import { bazaarApiGet } from "@utils/api-helper";
 import { useEffect, useState } from "react";
+import { endpoints } from "./service";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<any>("allproducts");
@@ -17,10 +18,47 @@ export default function Page() {
   });
 
   useEffect(() => {
-    bazaarApiGet("/products").then((res) => {
-      console.log("Product counts:", res);
+    bazaarApiGet("/products/counts").then((res) => {
+      setProductCounts({
+        allProducts: res.allProducts,
+        activeProducts: res.activeProducts,
+        inactiveProducts: res.inactiveProducts,
+        draftProducts: res.draftProducts,
+        outOfStockProducts: res.outOfStockProducts,
+        lowStockProducts: res.lowStockProducts,
+      });
     });
   }, []);
+
+  useEffect(() => {
+    let url = "";
+    switch (activeTab) {
+      case "allproducts":
+        url = endpoints.products;
+        break;
+      case "activeproducts":
+        url = `${endpoints.products}?productStatus=ACTIVE`;
+        break;
+      case "inactiveproducts":
+        url = `${endpoints.products}?productStatus=INACTIVE`;
+        break;
+      case "draftproducts":
+        url = `${endpoints.products}?productStatus=DRAFT`;
+        break;
+      case "outofstockproducts":
+        url = `${endpoints.products}?productStatus=OUTOFSTOCK`;
+        break;
+      case "lowstockproducts":
+        url = `${endpoints.products}?stock=lowstock`;
+        break;
+      default:
+        url = endpoints.products;
+        break;
+    }
+    bazaarApiGet(url).then((res) => {
+      console.log("Product counts:", res);
+    });
+  }, [activeTab]);
 
   return (
     <div className="w-full">
