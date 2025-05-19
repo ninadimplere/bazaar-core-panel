@@ -220,6 +220,61 @@ export function TrashIcon(props: IconProps) {
   );
 }
 
+export function AddProductIcon(props: IconProps) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <g clipPath="url(#clip0_1340_5403)">
+        <path
+          d="M9.16675 18.3335C8.48491 18.3335 7.83357 18.0583 6.53086 17.5081C3.28811 16.1382 1.66675 15.4533 1.66675 14.3012C1.66675 13.9787 1.66675 8.38725 1.66675 5.8335M9.16675 18.3335V9.4625M9.16675 18.3335C9.77075 18.3335 10.2442 18.1176 11.2501 17.6857M16.6667 5.8335V9.16683"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M12.5 14.5832H18.3333M15.4167 17.4998V11.6665"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M6.10501 8.07599L3.67068 6.89805C2.33472 6.25159 1.66675 5.92836 1.66675 5.4165C1.66675 4.90465 2.33472 4.58142 3.67068 3.93496L6.10501 2.75702C7.60744 2.03001 8.35866 1.6665 9.16675 1.6665C9.97483 1.6665 10.7261 2.03 12.2285 2.75702L14.6628 3.93496C15.9987 4.58142 16.6667 4.90465 16.6667 5.4165C16.6667 5.92836 15.9987 6.25159 14.6628 6.89805L12.2285 8.07599C10.7261 8.803 9.97483 9.1665 9.16675 9.1665C8.35866 9.1665 7.60744 8.803 6.10501 8.07599Z"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M4.16675 10L5.83341 10.8333"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M13.3333 3.3335L5 7.50016"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_1340_5403">
+          <rect width="20" height="20" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+  );
+}
+
 export function MessageOutlineIcon(props: IconProps) {
   return (
     <svg
