@@ -129,11 +129,10 @@ export default function OrderProductDrawer({
     }
 
     // Store the new status
-    const newStatusValue = validStatus.label.toUpperCase();
-
-    try {
+    const newStatusValue = validStatus.label.toUpperCase();    try {
       setUpdatingStatus(true);
-      await bazaarApiPost(`/orders/${orderDetails.id}/status`, {
+      await bazaarApiPost(`/orders/status`, {
+        ids: [Number(orderDetails.id)],
         status: newStatusValue
       });
       

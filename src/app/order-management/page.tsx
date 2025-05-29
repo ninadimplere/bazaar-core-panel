@@ -2,25 +2,25 @@
 
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import { Tabs, Tab } from "@heroui/tabs";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { bazaarApiGet, bazaarApiPost } from "../../utils/api-helper";
 import {
   Button,
   Table,
   TableHeader,
   TableRow,
-  TableCell,
-  TableBody,
+  TableCell,  TableBody,
   Pagination,
   Select,
   SelectItem,
   Link,
   TableColumn,
 } from "@heroui/react";
-import { col } from "framer-motion/client";
 import OrderManagementConstants from "./constants";
 import { Eye, MoreVertical } from "lucide-react";
 import OrderProductDrawer from "../../components/OrderManagement/OrderProductDrawer";
+import CustomCheckbox from "../../components/ui/CustomCheckbox";
+import BulkActionConfirmation from "../../components/OrderManagement/BulkActionConfirmation";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<any>("activeOrders");
@@ -33,8 +33,11 @@ export default function Page() {
     cancellationRequests: 0,
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);  const [searchQuery, setSearchQuery] = useState("");  
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set<number>());
+  const [selectedBulkAction, setSelectedBulkAction] = useState<string>("");
+  const [isApplyingBulkAction, setIsApplyingBulkAction] = useState(false);  const [pageSize, setPageSize] = useState<number>(10);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
 
   useEffect(() => {
     bazaarApiGet("/orders/counts").then((response) => {
@@ -44,12 +47,11 @@ export default function Page() {
           cancellationRequests: response.cancelled,
         });
     });
-  }, []);
-  useEffect(() => {
+  }, []);  useEffect(() => {
     setIsLoading(true);
-    bazaarApiGet("/orders").then((response) => {
-      setOrders(response);
+    bazaarApiGet("/orders").then((response) => {      setOrders(response);
       setFilteredOrders(response);
+      console.log('First order ID:', response[0]?.id, 'Type:', typeof response[0]?.id); // Log the ID and its type
       setIsLoading(false);
     }).catch(error => {
       console.error("Failed to fetch orders:", error);
@@ -74,15 +76,114 @@ export default function Page() {
     
     setFilteredOrders(filtered);
   }, [searchQuery, orders]);
-
   const handleOpenDrawer = (order: any) => {
     setSelectedOrder(order);
     setDrawerOpen(true);
+  };  // Handle row selection
+  const toggleRowSelection = (orderId: number) => {
+    console.log('Toggling selection for order ID:', orderId, typeof orderId);
+    
+    // Use a functional update for reliable state updates
+    setSelectedRows(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      const orderIdNum = Number(orderId);
+      
+      if (newSelected.has(orderIdNum)) {
+        console.log('Removing order ID:', orderIdNum);
+        newSelected.delete(orderIdNum);
+      } else {
+        console.log('Adding order ID:', orderIdNum);
+        newSelected.add(orderIdNum);
+      }
+      
+      console.log('New selected rows:', Array.from(newSelected));
+      return newSelected;
+    });
+  };// Handle select all rows
+  const toggleSelectAll = () => {
+    setSelectedRows(prevSelected => {
+      if (prevSelected.size === filteredOrders.length) {
+        // If all are selected, unselect all
+        console.log('Clearing all selections');
+        return new Set();
+      } else {
+        // Otherwise select all
+        const allOrderIds = filteredOrders.map(order => Number(order.id));
+        console.log('Selecting all orders:', allOrderIds);
+        return new Set(allOrderIds);
+      }
+    });
+  };
+  // Handle bulk action application
+  const handleApplyBulkAction = async () => {
+    if (!selectedBulkAction || selectedRows.size === 0) return;
+    
+    // Show the confirmation dialog instead of immediately applying the action
+    setIsConfirmationOpen(true);
   };
 
+  // This function will be called when the user confirms in the dialog
+  const executeBulkAction = async () => {
+    if (!selectedBulkAction || selectedRows.size === 0) return;
+    
+    setIsApplyingBulkAction(true);
+    try {
+      // Convert Set to Array for easier processing
+      const selectedOrderIds = Array.from(selectedRows).map(id => Number(id));
+      console.log('Processing bulk action for order IDs:', selectedOrderIds);
+        // Process based on the selected action
+      if (selectedBulkAction.startsWith('mark_')) {
+        // Extract the status from the action key (e.g., 'mark_shipped' -> 'SHIPPED')
+        const newStatus = selectedBulkAction.replace('mark_', '').toUpperCase();
+        
+        // Send all order ids at once to the new bulk endpoint
+        await bazaarApiPost(`/orders/status`, {
+          ids: selectedOrderIds,
+          status: newStatus
+        });
+        
+        // Refresh the order list
+        bazaarApiGet("/orders").then((response) => {
+          setOrders(response);
+          setFilteredOrders(response);
+        });
+          // Clear selections after successful action
+        setSelectedRows(new Set());
+        setSelectedBulkAction("");
+      } else if (selectedBulkAction === 'export_csv') {
+        // Export functionality would go here
+        // In a real implementation, this would generate and download a CSV file
+        alert('Export CSV functionality would be implemented here');
+        setSelectedRows(new Set());
+        setSelectedBulkAction("");
+      } else if (selectedBulkAction === 'delete') {
+        // Delete functionality would go here
+        // In a real implementation, this would delete the selected orders
+        // API call would go here
+        alert('Delete functionality would be implemented here');
+        setSelectedRows(new Set());
+        setSelectedBulkAction("");
+      }
+    } catch (error) {
+      console.error('Error applying bulk action:', error);
+    } finally {
+      setIsApplyingBulkAction(false);
+      setIsConfirmationOpen(false); // Close the confirmation dialog when done
+    }
+  };
   const renderCell = useCallback(
     (order: any, columnKey: string) => {
-      switch (columnKey) {        case "orderId":
+      switch (columnKey) {        case "select":
+          return (
+            <div className="flex items-center justify-center">
+              <CustomCheckbox
+                checked={selectedRows.has(Number(order.id))}
+                onChange={() => toggleRowSelection(Number(order.id))}
+                ariaLabel={`Select order ${order.id}`}
+              />
+            </div>
+          );
+        case "orderId":
           return (
             <div className="text-sm font-medium text-gray-800 font-mono">
               #{order.id}
@@ -137,13 +238,14 @@ export default function Page() {
                   </button>
                 )}
               </div>
-            </div>
-          );        case "totalAmount":
+            </div>          );
+        case "totalAmount":
           return (
             <div className="text-sm font-semibold text-gray-800 tabular-nums">
               ${parseFloat(order.totalPrice).toFixed(2)}
             </div>
-          );case "paymentStatus":
+          );
+        case "paymentStatus":
           const paymentStatusColors: Record<string, string> = {
             PAID: "bg-green-100 text-green-700 border border-green-200",
             PENDING: "bg-amber-100 text-amber-700 border border-amber-200",
@@ -157,8 +259,7 @@ export default function Page() {
               {order.paymentStatus}
             </div>
           );
-        case "orderStatus":
-          const handleStatusChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+        case "orderStatus":          const handleStatusChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
             const newStatusKey = event.target.value;
             const validStatus = OrderManagementConstants.orderStatusFilter.find(
               (statusObj) => statusObj.key === newStatusKey
@@ -167,19 +268,20 @@ export default function Page() {
             if (!validStatus) {
               console.error("Invalid order status selected");
               return;
-            }
-
-            try {
-              await bazaarApiPost(`/orders/${order.id}/status`, {
+            }            try {
+              await bazaarApiPost(`/orders/status`, {
+                ids: [Number(order.id)], // Send as array of order IDs
                 status: validStatus.label.toUpperCase(), // Convert label to uppercase
               });
-              bazaarApiGet("/orders").then((response) => setOrders(response));
+              // Refresh the orders list
+              bazaarApiGet("/orders").then((response) => {
+                setOrders(response);
+                setFilteredOrders(response);
+              });
             } catch (error) {
               console.error("Failed to update order status", error);
             }
-          };
-
-            console.log(order.orderStatus);          const orderStatusColors = {
+          };          const orderStatusColors = {
             PENDING: "bg-amber-100 text-amber-700 border border-amber-200",
             PROCESSING: "bg-blue-100 text-blue-700 border border-blue-200",
             SHIPPED: "bg-indigo-100 text-indigo-700 border border-indigo-200",
@@ -208,9 +310,9 @@ export default function Page() {
                     {statusObj.label}
                   </option>
                 ))}
-              </select>
-            </div>
-          );        case "action":
+              </select>            </div>
+          );
+        case "action":
           return (
             <div className="flex items-center justify-end gap-1">
               <button
@@ -226,18 +328,19 @@ export default function Page() {
             </div>
           );
         default:
-          return null;
-      }
-    },
-    [orders],
+          return null;      }    },
+    [orders, selectedRows, toggleRowSelection, handleOpenDrawer, filteredOrders],
   );
-
+    // No need for select all ref effect with custom checkbox component
+  
   return (
     <div className="w-full flex">
       <div className="w-full">
-      <div className="mb-5">
-        <Breadcrumb pageName="Orders & Returns" />
-      </div>      <div className="flex max-h-screen w-full flex-col overflow-hidden rounded-[10px] bg-white p-6 shadow-sm border border-gray-100 dark:bg-gray-dark dark:shadow-card">
+        <div className="mb-5">
+          <Breadcrumb pageName="Orders & Returns" />
+        </div>
+        
+        <div className="flex max-h-screen w-full flex-col overflow-hidden rounded-[10px] bg-white p-6 shadow-sm border border-gray-100 dark:bg-gray-dark dark:shadow-card">
         <div className="flex w-full items-center justify-center pb-4">
           <Tabs
             color="primary"
@@ -264,11 +367,12 @@ export default function Page() {
                 type="search"
                 placeholder="Search by order ID, product, or customer"
                 className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}              />
             </div>
-            <div className="flex flex-row items-center gap-4">              <Select
+            
+            <div className="flex flex-row items-center gap-4"><Select
                 key="orderDateRange"
-                defaultSelectedKeys={["1"]}
                 label="Date Range"
                 radius="lg"
                 size="sm"
@@ -285,7 +389,6 @@ export default function Page() {
               </Select>
               <Select
                 key="orderStatus"
-                defaultSelectedKeys={["1"]}
                 label="Order Status"
                 radius="lg"
                 size="sm"
@@ -299,10 +402,8 @@ export default function Page() {
                 {OrderManagementConstants.orderStatusFilter.map((statusObj) => (
                   <SelectItem key={statusObj.key}>{statusObj.label}</SelectItem>
                 ))}
-              </Select>
-              <Select
+              </Select>              <Select
                 key="paymentStatus"
-                defaultSelectedKeys={["1"]}
                 label="Payment Status"
                 radius="lg"
                 size="sm"
@@ -311,17 +412,80 @@ export default function Page() {
                 classNames={{
                   trigger: "border border-gray-300 bg-white text-sm py-1",
                   label: "text-xs text-gray-500",
-                }}
-              >
+                }}              >
                 {OrderManagementConstants.paymentStatusFilter.map((paymentStatusObj) => (
                   <SelectItem key={paymentStatusObj.key}>{paymentStatusObj.label}</SelectItem>
                 ))}
-              </Select>              <Link href="#" underline="always" className="text-sm whitespace-nowrap text-primary font-medium">
+              </Select>
+              
+              <Link 
+                href="#" 
+                underline="always" 
+                className="text-sm whitespace-nowrap text-primary font-medium"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSearchQuery("");
+                }}
+              >
                 Reset Filters
               </Link>
             </div>
           </div>
-        </div>         <Table
+        </div>
+        
+        {/* Bulk Actions Section */}
+        <div className="flex items-center justify-between mt-4 mb-2">
+          <div className="flex items-center gap-3">            <div className="flex items-center">
+              <div className="mr-2">
+                <CustomCheckbox
+                  checked={filteredOrders.length > 0 && selectedRows.size === filteredOrders.length}
+                  onChange={toggleSelectAll}
+                  ariaLabel="Select all orders"
+                />
+              </div>
+              <span className="text-sm text-gray-700">
+                {selectedRows.size > 0 ? `${selectedRows.size} Selected` : "Select All"}
+              </span>
+            </div>
+            
+            {selectedRows.size > 0 && (              <div className="flex items-center gap-2">
+                <Select
+                  placeholder="Select action"
+                  aria-label="Bulk Action"
+                  className="min-w-[200px]"
+                  radius="lg"
+                  size="sm"
+                  variant="bordered"
+                  classNames={{
+                    trigger: "border border-gray-300 bg-white text-sm py-1",
+                    value: "text-sm",
+                  }}                  onChange={(e) => {
+                    if (e.target.value) {
+                      setSelectedBulkAction(e.target.value.toString());
+                    }
+                  }}
+                >
+                  {OrderManagementConstants.bulkActions.map((action) => (
+                    <SelectItem key={action.key}>
+                      {action.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+                <Button
+                  color="primary"
+                  radius="lg"
+                  size="sm"
+                  isDisabled={!selectedBulkAction || selectedRows.size === 0}
+                  isLoading={isApplyingBulkAction}
+                  onClick={handleApplyBulkAction}
+                >
+                  Apply
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+          <Table
           aria-label="Orders table"
           className="mt-4"
           color="primary"
@@ -329,31 +493,35 @@ export default function Page() {
           shadow="none"
           isHeaderSticky
           isStriped={false}
-          loadingState={isLoading ? "loading" : "idle"}
-          loadingContent={<div className="flex justify-center p-6">Loading orders...</div>}
           classNames={{
             th: "bg-primary text-white py-3",
             thead: "rounded-t-lg",
             tr: "border-b border-gray-200 hover:bg-gray-50",
           }}
-        ><TableHeader columns={OrderManagementConstants.orderTableColumns}>
+        >
+        <TableHeader columns={OrderManagementConstants.orderTableColumns}>
             {(column) => (
               <TableColumn
                 key={column.uid}
                 align={
-                  column.uid === "price" || column.uid === "totalAmount"
+                  column.uid === "select"
+                    ? "center"
+                    : column.uid === "price" || column.uid === "totalAmount"
                     ? "start"
                     : column.uid === "action"
                       ? "end"
                       : "start"
                 }
-                className="text-xs font-semibold uppercase tracking-wider"
-              >
-                {column.name}
+                className="text-xs font-semibold uppercase tracking-wider"              >                {column.uid === "select" ? (
+                  <div className="flex items-center justify-center">
+                    {/* Header checkbox removed */}
+                  </div>
+                ) : (
+                  column.name                )}
               </TableColumn>
             )}
           </TableHeader>
-          <TableBody items={orders} emptyContent={"No orders found"}>
+          <TableBody items={filteredOrders} emptyContent={"No orders found"}>
             {(item) => (
               <TableRow key={item.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors">
                 {(columnKey) => (
@@ -364,8 +532,7 @@ export default function Page() {
           </TableBody>
         </Table>        <div className="mb-6 mt-6 flex w-full items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Showing</span>
-            <Select
+            <span className="text-sm text-gray-500">Showing</span>            <Select
               key="paginationPageSize"
               className="min-w-[80px]"
               defaultSelectedKeys={["10"]}
@@ -374,42 +541,57 @@ export default function Page() {
               classNames={{
                 trigger: "border border-gray-300 bg-white text-sm py-0 min-h-0 h-8",
               }}
-            >
-              {OrderManagementConstants.paginationPageSizes.map(
+              onChange={(e) => {
+                if (e.target.value) {
+                  setPageSize(parseInt(e.target.value.toString(), 10));
+                }
+              }}
+            >{OrderManagementConstants.paginationPageSizes.map(
                 (paginationPageSizeObj) => (
                   <SelectItem key={paginationPageSizeObj.key}>
                     {paginationPageSizeObj.label}
                   </SelectItem>
-                ),
+                )
               )}
             </Select>
-            <span className="text-sm text-gray-500">of {orders.length} items</span>
+            <span className="text-sm text-gray-500">of {filteredOrders.length} items</span>
           </div>
 
-          <Pagination
-            color="primary"
+          <Pagination            color="primary"
             showControls
             showShadow={false}
-            initialPage={1}
-            total={10}
+            initialPage={1}            total={Math.ceil(filteredOrders.length / pageSize)}
             size="sm"
             classNames={{
               cursor: "bg-primary",
               item: "text-sm",
             }}
-          />
-        </div>
+          />        </div>
       </div>      <OrderProductDrawer
         isOpen={drawerOpen}
         onOpenChange={() => {
           setDrawerOpen(false);
           setSelectedOrder(null);
-        }}
-        orderDetails={selectedOrder}
+        }}        orderDetails={selectedOrder}
         onOrderStatusUpdate={(orderId, newStatus) => {
           // Refresh the orders list after status update
-          bazaarApiGet("/orders").then((response) => setOrders(response));
+          bazaarApiGet("/orders").then((response) => {
+            setOrders(response);
+            setFilteredOrders(response);
+          }).catch(error => {
+            console.error("Failed to refresh orders after status update:", error);
+          });
         }}
+      />
+
+      {/* Confirmation Dialog for Bulk Actions */}
+      <BulkActionConfirmation
+        isOpen={isConfirmationOpen}
+        onClose={() => setIsConfirmationOpen(false)}
+        onConfirm={executeBulkAction}
+        actionLabel={selectedBulkAction}
+        itemCount={selectedRows.size}
+        isLoading={isApplyingBulkAction}
       />
       </div>
     </div>

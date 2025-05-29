@@ -28,6 +28,7 @@ const OrderManagementConstants = {
     { key: "2", label: "Unpaid" },
     { key: "3", label: "Refunded" },
   ],  orderTableColumns: [
+    { name: "", uid: "select" },
     { name: "Order ID", uid: "orderId" },
     { name: "Order Date", uid: "orderDate" },
     { name: "Customer", uid: "customerName" },
@@ -36,13 +37,20 @@ const OrderManagementConstants = {
     { name: "Payment Status", uid: "paymentStatus" },
     { name: "Order Status", uid: "orderStatus" },
     { name: "Action", uid: "action" },
-  ],
-  paginationPageSizes: [
+  ],paginationPageSizes: [
     { key: "10", label: "10" },
     { key: "15", label: "15" },
     { key: "20", label: "20" },
     { key: "25", label: "25" },
     { key: "30", label: "30" },
+  ],
+  bulkActions: [
+    { key: "mark_shipped", label: "Mark as Shipped" },
+    { key: "mark_delivered", label: "Mark as Delivered" },
+    { key: "mark_processing", label: "Mark as Processing" },
+    { key: "mark_cancelled", label: "Mark as Cancelled" },
+    { key: "export_csv", label: "Export as CSV" },
+    { key: "delete", label: "Delete Selected" },
   ],
 };
 
