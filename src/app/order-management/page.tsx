@@ -25,6 +25,7 @@ import OrderProductDrawer from "../../components/OrderManagement/OrderProductDra
 export default function Page() {
   const [activeTab, setActiveTab] = useState<any>("activeOrders");
   const [orders, setOrders] = useState<any[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderCounts, setOrderCounts] = useState({
     activeOrders: 0,
@@ -32,6 +33,8 @@ export default function Page() {
     cancellationRequests: 0,
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     bazaarApiGet("/orders/counts").then((response) => {
@@ -42,12 +45,35 @@ export default function Page() {
         });
     });
   }, []);
-
   useEffect(() => {
+    setIsLoading(true);
     bazaarApiGet("/orders").then((response) => {
       setOrders(response);
+      setFilteredOrders(response);
+      setIsLoading(false);
+    }).catch(error => {
+      console.error("Failed to fetch orders:", error);
+      setIsLoading(false);
     });
   }, [activeTab]);
+  
+  // Handle search functionality
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredOrders(orders);
+      return;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    const filtered = orders.filter(order => 
+      order.id.toString().includes(query) ||
+      order?.user?.email?.toLowerCase().includes(query) ||
+      order?.user?.UserProfile?.fullName?.toLowerCase().includes(query) ||
+      order.products.some((p: any) => p.product?.title?.toLowerCase().includes(query))
+    );
+    
+    setFilteredOrders(filtered);
+  }, [searchQuery, orders]);
 
   const handleOpenDrawer = (order: any) => {
     setSelectedOrder(order);
@@ -56,37 +82,46 @@ export default function Page() {
 
   const renderCell = useCallback(
     (order: any, columnKey: string) => {
-      switch (columnKey) {
-        case "orderId":
+      switch (columnKey) {        case "orderId":
           return (
-            <div className="text-sm font-medium text-gray-600">
-              {order.id}
+            <div className="text-sm font-medium text-gray-800 font-mono">
+              #{order.id}
             </div>
-          );
-        case "orderDate":
+          );        case "orderDate":
           return (
-            <div className="text-sm font-medium text-gray-600">
-              {new Date(order.createdAt).toLocaleDateString()}
+            <div className="text-sm font-medium text-gray-700">
+              {new Date(order.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}
             </div>
-          );
-        case "customerName":
+          );        case "customerName":
           return (
-            <div className="text-sm font-medium text-gray-600">
-              {order?.user?.email || 'N/A'}
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center">
+                {order?.user?.UserProfile?.fullName ? 
+                  order?.user?.UserProfile?.fullName.charAt(0).toUpperCase() : "U"}
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-800">
+                  {order?.user?.UserProfile?.fullName || 'Unknown User'}
+                </div>
+                <div className="text-xs text-gray-500">{order?.user?.email || 'N/A'}</div>
+              </div>
             </div>
-          );
-        case "products":
+          );        case "products":
           if (!order?.products?.length) return null;
           return (
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3">
               <img
                 src={order.products[0]?.product?.imageUrl || '/default-product-image.png'}
                 alt="Product Image"
-                className="w-8 h-8 object-cover rounded"
+                className="w-10 h-10 object-cover rounded-lg border border-gray-200"
               />
               <div className="flex flex-col">
                 <button
-                  className="text-primary font-semibold hover:underline text-left"
+                  className="text-primary font-medium hover:underline text-left text-sm"
                   onClick={() => handleOpenDrawer(order)}
                   type="button"
                 >
@@ -103,23 +138,21 @@ export default function Page() {
                 )}
               </div>
             </div>
-          );
-        case "totalAmount":
+          );        case "totalAmount":
           return (
-            <div className="text-sm font-bold text-gray-800">
-              ${order.totalPrice}
+            <div className="text-sm font-semibold text-gray-800 tabular-nums">
+              ${parseFloat(order.totalPrice).toFixed(2)}
             </div>
-          );
-        case "paymentStatus":
+          );case "paymentStatus":
           const paymentStatusColors: Record<string, string> = {
-            PAID: "bg-green-500 text-white rounded-md",
-            PENDING: "bg-red-500 text-white rounded-md",
-            REFUNDED: "bg-blue-500 text-white rounded-md",
+            PAID: "bg-green-100 text-green-700 border border-green-200",
+            PENDING: "bg-amber-100 text-amber-700 border border-amber-200",
+            REFUNDED: "bg-blue-100 text-blue-700 border border-blue-200",
           };
           const paymentStatus = order.paymentStatus as keyof typeof paymentStatusColors;
           return (
             <div
-              className={`text-sm font-medium px-2 py-1 ${paymentStatusColors[paymentStatus] || "bg-gray-100 text-gray-600 rounded-md"}`}
+              className={`text-xs font-medium px-2.5 py-1 ${paymentStatusColors[paymentStatus] || "bg-gray-100 text-gray-600"} rounded-full inline-block`}
             >
               {order.paymentStatus}
             </div>
@@ -146,33 +179,48 @@ export default function Page() {
             }
           };
 
-            console.log(order.orderStatus);
-
+            console.log(order.orderStatus);          const orderStatusColors = {
+            PENDING: "bg-amber-100 text-amber-700 border border-amber-200",
+            PROCESSING: "bg-blue-100 text-blue-700 border border-blue-200",
+            SHIPPED: "bg-indigo-100 text-indigo-700 border border-indigo-200",
+            DELIVERED: "bg-green-100 text-green-700 border border-green-200",
+            CANCELLED: "bg-red-100 text-red-700 border border-red-200",
+          };
+          
           return (
-            <select
-              className="text-sm font-medium text-gray-600 border rounded-md px-2 py-1"
-              value={OrderManagementConstants.orderStatusFilter.find(
-                (statusObj) => statusObj.label.toUpperCase() === order.orderStatus.toUpperCase()
-              )?.key || ""} // Map the orderStatus string to the corresponding dropdown key
-              onChange={handleStatusChange}
-            >
-              {OrderManagementConstants.orderStatusFilter.map((statusObj) => (
-                <option key={statusObj.key} value={statusObj.key}>
-                  {statusObj.label}
-                </option>
-              ))}
-            </select>
-          );
-        case "action":
+            <div className="flex items-center gap-2">
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${
+                order.orderStatus === 'DELIVERED' ? 'bg-green-500' : 
+                order.orderStatus === 'SHIPPED' ? 'bg-indigo-500' : 
+                order.orderStatus === 'PROCESSING' ? 'bg-blue-500' : 
+                order.orderStatus === 'CANCELLED' ? 'bg-red-500' : 'bg-amber-500'
+              }`}></span>
+              <select
+                className="text-xs font-medium border border-gray-300 rounded-full px-2.5 py-1 appearance-none cursor-pointer bg-no-repeat bg-right pr-8 focus:outline-none focus:ring-1 focus:ring-primary"
+                style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23667085' stroke-width='1.67' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e\")", backgroundPosition: "right 8px center" }}
+                value={OrderManagementConstants.orderStatusFilter.find(
+                  (statusObj) => statusObj.label.toUpperCase() === order.orderStatus
+                )?.key || ""} // Map the orderStatus string to the corresponding dropdown key
+                onChange={handleStatusChange}
+              >
+                {OrderManagementConstants.orderStatusFilter.map((statusObj) => (
+                  <option key={statusObj.key} value={statusObj.key}>
+                    {statusObj.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          );        case "action":
           return (
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-1">
               <button
                 onClick={() => handleOpenDrawer(order)}
-                className="p-2 hover:bg-gray-100 rounded-full"
+                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600 hover:text-primary transition-colors"
+                title="View Order Details"
               >
                 <Eye className="w-4 h-4" />
               </button>
-              <button className="p-2 hover:bg-gray-100 rounded-full">
+              <button className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600 hover:text-primary transition-colors">
                 <MoreVertical className="w-4 h-4" />
               </button>
             </div>
@@ -187,40 +235,49 @@ export default function Page() {
   return (
     <div className="w-full flex">
       <div className="w-full">
-      <Breadcrumb pageName="Orders & Returns" />
-
-      <div className="flex max-h-screen w-full flex-col overflow-hidden rounded-[10px] bg-white px-4 py-2 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div className="flex w-full items-center justify-center py-2">
+      <div className="mb-5">
+        <Breadcrumb pageName="Orders & Returns" />
+      </div>      <div className="flex max-h-screen w-full flex-col overflow-hidden rounded-[10px] bg-white p-6 shadow-sm border border-gray-100 dark:bg-gray-dark dark:shadow-card">
+        <div className="flex w-full items-center justify-center pb-4">
           <Tabs
             color="primary"
             aria-label="Order Tabs"
             selectedKey={activeTab}
             onSelectionChange={setActiveTab}
-            className="w-full max-w-5xl"
+            className="w-full"
             size="lg"
+            variant="underlined"
           >
             <Tab key="activeOrders" title={`Active Orders (${orderCounts.activeOrders})`} />
             <Tab key="returnRequests" title={`Return Requests (${orderCounts.returnOrders})`} />
             <Tab key="cancellationRequests" title={`Cancellation Requests (${orderCounts.cancellationRequests})`} />
           </Tabs>
-        </div>
-
-        <div className="py-4">
-          <h1 className="font-bold text-black">Search by Order ID & Customer Name</h1>
-          <div className="mt-2 flex flex-row items-center gap-8 w-full">
-            <input
-              type="search"
-              placeholder="Search"
-              className="flex-1 min-w-[350px] max-w-[700px] rounded-full border bg-gray-2 px-5 py-3 outline-none transition-colors focus-visible:border-primary dark:border-dark-3 dark:bg-dark-2 dark:hover:border-dark-4 dark:hover:bg-dark-3 dark:hover:text-dark-6 dark:focus-visible:border-primary"
-            />
-            <div className="flex flex-row items-center gap-4">
-              <Select
+        </div>        <div className="py-5 border-b border-gray-200">
+          <h1 className="font-semibold text-gray-900 text-lg mb-3">Search by Order ID & Customer Name</h1>
+          <div className="flex flex-row items-center gap-5 w-full">
+            <div className="relative flex-1 min-w-[350px] max-w-[600px]">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z" stroke="currentColor" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>              <input
+                type="search"
+                placeholder="Search by order ID, product, or customer"
+                className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div className="flex flex-row items-center gap-4">              <Select
                 key="orderDateRange"
-                defaultSelectedKeys={["10"]}
+                defaultSelectedKeys={["1"]}
                 label="Date Range"
-                radius="full"
+                radius="lg"
                 size="sm"
-                className="min-w-[180px] bg-gray-2 rounded-full"
+                variant="bordered"
+                className="min-w-[160px]"
+                classNames={{
+                  trigger: "border border-gray-300 bg-white text-sm py-1",
+                  label: "text-xs text-gray-500",
+                }}
               >
                 {OrderManagementConstants.orderDateRange.map((dateRangeObj) => (
                   <SelectItem key={dateRangeObj.key}>{dateRangeObj.label}</SelectItem>
@@ -228,11 +285,16 @@ export default function Page() {
               </Select>
               <Select
                 key="orderStatus"
-                defaultSelectedKeys={["10"]}
+                defaultSelectedKeys={["1"]}
                 label="Order Status"
-                radius="full"
+                radius="lg"
                 size="sm"
-                className="min-w-[180px] bg-gray-2 rounded-full"
+                variant="bordered"
+                className="min-w-[160px]"
+                classNames={{
+                  trigger: "border border-gray-300 bg-white text-sm py-1",
+                  label: "text-xs text-gray-500",
+                }}
               >
                 {OrderManagementConstants.orderStatusFilter.map((statusObj) => (
                   <SelectItem key={statusObj.key}>{statusObj.label}</SelectItem>
@@ -240,84 +302,101 @@ export default function Page() {
               </Select>
               <Select
                 key="paymentStatus"
-                defaultSelectedKeys={["10"]}
+                defaultSelectedKeys={["1"]}
                 label="Payment Status"
-                radius="full"
+                radius="lg"
                 size="sm"
-                className="min-w-[180px] bg-gray-2 rounded-full"
+                variant="bordered"
+                className="min-w-[160px]"
+                classNames={{
+                  trigger: "border border-gray-300 bg-white text-sm py-1",
+                  label: "text-xs text-gray-500",
+                }}
               >
                 {OrderManagementConstants.paymentStatusFilter.map((paymentStatusObj) => (
                   <SelectItem key={paymentStatusObj.key}>{paymentStatusObj.label}</SelectItem>
                 ))}
-              </Select>
-              <Link href="#" underline="always" className="text-sm whitespace-nowrap">
+              </Select>              <Link href="#" underline="always" className="text-sm whitespace-nowrap text-primary font-medium">
                 Reset Filters
               </Link>
             </div>
           </div>
-        </div>
-
-         <Table
-          aria-label="Example table with custom cells"
+        </div>         <Table
+          aria-label="Orders table"
           className="mt-4"
           color="primary"
-          radius="none"
+          radius="sm"
           shadow="none"
           isHeaderSticky
+          isStriped={false}
+          loadingState={isLoading ? "loading" : "idle"}
+          loadingContent={<div className="flex justify-center p-6">Loading orders...</div>}
           classNames={{
-            th: "bg-primary text-white",
-            thead: "rounded-none",
+            th: "bg-primary text-white py-3",
+            thead: "rounded-t-lg",
+            tr: "border-b border-gray-200 hover:bg-gray-50",
           }}
-        >
-          <TableHeader columns={OrderManagementConstants.orderTableColumns}>
+        ><TableHeader columns={OrderManagementConstants.orderTableColumns}>
             {(column) => (
               <TableColumn
                 key={column.uid}
                 align={
-                  column.uid === "price"
+                  column.uid === "price" || column.uid === "totalAmount"
                     ? "start"
-                    : column.uid === "actions"
+                    : column.uid === "action"
                       ? "end"
                       : "start"
                 }
+                className="text-xs font-semibold uppercase tracking-wider"
               >
                 {column.name}
               </TableColumn>
             )}
           </TableHeader>
-          <TableBody items={orders}>
+          <TableBody items={orders} emptyContent={"No orders found"}>
             {(item) => (
-              <TableRow key={item.id}>
+              <TableRow key={item.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors">
                 {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey as string)}</TableCell>
+                  <TableCell className="py-3">{renderCell(item, columnKey as string)}</TableCell>
                 )}
               </TableRow>
             )}
           </TableBody>
-        </Table>
-
-        <div className="mb-4 mt-4 flex w-full items-center justify-end gap-4">
-          <Select
-            key="paginationPageSize"
-            className="w-1/6"
-            defaultSelectedKeys={["10"]}
-            label="Page entries"
-            labelPlacement="outside-left"
-          >
-            {OrderManagementConstants.paginationPageSizes.map(
-              (paginationPageSizeObj) => (
-                <SelectItem key={paginationPageSizeObj.key}>
-                  {paginationPageSizeObj.label}
-                </SelectItem>
-              ),
-            )}
-          </Select>
+        </Table>        <div className="mb-6 mt-6 flex w-full items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Showing</span>
+            <Select
+              key="paginationPageSize"
+              className="min-w-[80px]"
+              defaultSelectedKeys={["10"]}
+              variant="bordered"
+              size="sm"
+              classNames={{
+                trigger: "border border-gray-300 bg-white text-sm py-0 min-h-0 h-8",
+              }}
+            >
+              {OrderManagementConstants.paginationPageSizes.map(
+                (paginationPageSizeObj) => (
+                  <SelectItem key={paginationPageSizeObj.key}>
+                    {paginationPageSizeObj.label}
+                  </SelectItem>
+                ),
+              )}
+            </Select>
+            <span className="text-sm text-gray-500">of {orders.length} items</span>
+          </div>
 
           <Pagination
-            color="secondary"
+            color="primary"
             showControls
+            showShadow={false}
             initialPage={1}
             total={10}
+            size="sm"
+            classNames={{
+              cursor: "bg-primary",
+              item: "text-sm",
+            }}
           />
         </div>
       </div>      <OrderProductDrawer

@@ -27,13 +27,12 @@ const OrderManagementConstants = {
     { key: "1", label: "Paid" },
     { key: "2", label: "Unpaid" },
     { key: "3", label: "Refunded" },
-  ],
-  orderTableColumns: [
+  ],  orderTableColumns: [
     { name: "Order ID", uid: "orderId" },
     { name: "Order Date", uid: "orderDate" },
-    { name: "Customer Name", uid: "customerName" },
+    { name: "Customer", uid: "customerName" },
     { name: "Products", uid: "products" },
-    { name: "Total Amount", uid: "totalAmount" },
+    { name: "Amount", uid: "totalAmount" },
     { name: "Payment Status", uid: "paymentStatus" },
     { name: "Order Status", uid: "orderStatus" },
     { name: "Action", uid: "action" },
