@@ -1,9 +1,9 @@
 "use client";
 
-import Breadcrumb from "@components/Breadcrumbs/Breadcrumb";
+import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import { Tabs, Tab } from "@heroui/tabs";
 import { useCallback, useEffect, useState } from "react";
-import { bazaarApiGet } from "@utils/api-helper";
+import { bazaarApiGet, bazaarApiPost } from "../../utils/api-helper";
 import {
   Button,
   Table,
@@ -20,11 +20,12 @@ import {
 import { col } from "framer-motion/client";
 import OrderManagementConstants from "./constants";
 import { Eye, MoreVertical } from "lucide-react";
-import OrderProductDrawer from "@components/OrderManagement/OrderProductDrawer";
+import OrderProductDrawer from "../../components/OrderManagement/OrderProductDrawer";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<any>("activeOrders");
   const [orders, setOrders] = useState<any[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderCounts, setOrderCounts] = useState({
     activeOrders: 0,
     returnOrders: 0,
@@ -48,6 +49,11 @@ export default function Page() {
     });
   }, [activeTab]);
 
+  const handleOpenDrawer = (order: any) => {
+    setSelectedOrder(order);
+    setDrawerOpen(true);
+  };
+
   const renderCell = useCallback(
     (order: any, columnKey: string) => {
       switch (columnKey) {
@@ -66,11 +72,11 @@ export default function Page() {
         case "customerName":
           return (
             <div className="text-sm font-medium text-gray-600">
-              {order.user.email}
+              {order?.user?.email || 'N/A'}
             </div>
           );
         case "products":
-          if (!order.products || order.products.length === 0) return null;
+          if (!order?.products?.length) return null;
           return (
             <div className="flex items-start gap-4">
               <img
@@ -81,15 +87,15 @@ export default function Page() {
               <div className="flex flex-col">
                 <button
                   className="text-primary font-semibold hover:underline text-left"
-                  onClick={() => setDrawerOpen(true)}
+                  onClick={() => handleOpenDrawer(order)}
                   type="button"
                 >
-                  {order.products[0]?.product?.title}
+                  {order.products[0]?.product?.title || 'Untitled Product'}
                 </button>
                 {order.products.length > 1 && (
                   <button
                     className="text-xs text-gray-400 mt-1 hover:underline text-left"
-                    onClick={() => setDrawerOpen(true)}
+                    onClick={() => handleOpenDrawer(order)}
                     type="button"
                   >
                     +{order.products.length - 1} More Item{order.products.length > 2 ? "s" : ""}
@@ -105,24 +111,71 @@ export default function Page() {
             </div>
           );
         case "paymentStatus":
+          const paymentStatusColors: Record<string, string> = {
+            PAID: "bg-green-500 text-white rounded-md",
+            PENDING: "bg-red-500 text-white rounded-md",
+            REFUNDED: "bg-blue-500 text-white rounded-md",
+          };
+          const paymentStatus = order.paymentStatus as keyof typeof paymentStatusColors;
           return (
-            <div className={`text-sm font-medium ${order.paymentStatus === 'PAID' ? 'text-green-600' : 'text-red-600'}`}>
+            <div
+              className={`text-sm font-medium px-2 py-1 ${paymentStatusColors[paymentStatus] || "bg-gray-100 text-gray-600 rounded-md"}`}
+            >
               {order.paymentStatus}
             </div>
           );
         case "orderStatus":
+          const handleStatusChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+            const newStatusKey = event.target.value;
+            const validStatus = OrderManagementConstants.orderStatusFilter.find(
+              (statusObj) => statusObj.key === newStatusKey
+            );
+
+            if (!validStatus) {
+              console.error("Invalid order status selected");
+              return;
+            }
+
+            try {
+              await bazaarApiPost(`/orders/${order.id}/status`, {
+                status: validStatus.label.toUpperCase(), // Convert label to uppercase
+              });
+              bazaarApiGet("/orders").then((response) => setOrders(response));
+            } catch (error) {
+              console.error("Failed to update order status", error);
+            }
+          };
+
+            console.log(order.orderStatus);
+
           return (
-            <div className="text-sm font-medium text-gray-600">
-              {order.orderStatus}
-            </div>
+            <select
+              className="text-sm font-medium text-gray-600 border rounded-md px-2 py-1"
+              value={OrderManagementConstants.orderStatusFilter.find(
+                (statusObj) => statusObj.label.toUpperCase() === order.orderStatus.toUpperCase()
+              )?.key || ""} // Map the orderStatus string to the corresponding dropdown key
+              onChange={handleStatusChange}
+            >
+              {OrderManagementConstants.orderStatusFilter.map((statusObj) => (
+                <option key={statusObj.key} value={statusObj.key}>
+                  {statusObj.label}
+                </option>
+              ))}
+            </select>
           );
         case "action":
           return (
             <div className="flex items-center justify-end gap-2">
-              <Eye />
-            <MoreVertical />
+              <button
+                onClick={() => handleOpenDrawer(order)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+              <button className="p-2 hover:bg-gray-100 rounded-full">
+                <MoreVertical className="w-4 h-4" />
+              </button>
             </div>
-            
           );
         default:
           return null;
@@ -267,8 +320,18 @@ export default function Page() {
             total={10}
           />
         </div>
-      </div>
-      <OrderProductDrawer isOpen={drawerOpen} onOpenChange={() => setDrawerOpen(false)} />
+      </div>      <OrderProductDrawer
+        isOpen={drawerOpen}
+        onOpenChange={() => {
+          setDrawerOpen(false);
+          setSelectedOrder(null);
+        }}
+        orderDetails={selectedOrder}
+        onOrderStatusUpdate={(orderId, newStatus) => {
+          // Refresh the orders list after status update
+          bazaarApiGet("/orders").then((response) => setOrders(response));
+        }}
+      />
       </div>
     </div>
   );
