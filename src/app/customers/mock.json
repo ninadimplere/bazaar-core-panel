@@ -1,0 +1,56 @@
+[
+  {
+    "customerId": "usr_3",
+    "name": "Mark Doe",
+    "email": "charlie@example.com",
+    "phoneNumber": "+9876543210",
+    "orderCount": 20,
+    "totalSpend": 1564.99,
+    "lastOrderDate": "2025-05-11T22:17:30.847Z",
+    "memberSince": "2025-05-26T17:08:04.728Z",
+    "address": {
+      "addressLine1": "321 Pine St",
+      "city": "Seattle",
+      "state": "WA",
+      "postalCode": "98101",
+      "country": "USA"
+    },
+    "tag": "ONE-TIME"
+  },
+  {
+    "customerId": "usr_4",
+    "name": "Jane Smith",
+    "email": "janesmith@example.com",
+    "number": "+9876543210",
+    "orderCount": 5,
+    "totalSpend": 2450.75,
+    "lastOrderDate": "2025-05-18T22:17:30.847Z",
+    "memberSince": "2025-05-26T17:08:04.728Z",
+    "address": {
+      "addressLine1": "456 Elm St",
+      "city": "Portland",
+      "state": "OR",
+      "postalCode": "97201",
+      "country": "USA"
+    },
+    "tag": "FREQUENT"
+  },
+  {
+    "customerId": "usr_5",
+    "name": "Alice Johnson",
+    "email": "alicejohnson@example.com",
+    "number": "+9876543210",
+    "orderCount": 1,
+    "totalSpend": 89.99,
+    "lastOrderDate": "2025-05-21T22:17:30.847Z",
+    "memberSince": "2020-05-26T17:08:04.728Z",
+    "address": {
+      "addressLine1": "789 Maple Ave",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94101",
+      "country": "USA"
+    },
+    "tag": "HIGH-SPENDER"
+  }
+]

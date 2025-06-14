@@ -27,7 +27,8 @@
       "@js/*": ["./src/js/*"],
       "@services/*": ["./src/services/*"],
       "@/types/*": ["./src/types/*"],
-      "@utils/*": ["./src/utils/*"]
+      "@utils/*": ["./src/utils/*"],
+      "@app/*": ["./src/app/*"]
     },
     "target": "ES2017"
   },

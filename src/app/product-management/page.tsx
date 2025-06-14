@@ -25,7 +25,6 @@ import { AddProductIcon } from "@assets/icons";
 import AddProductDrawer from "@components/ProductManagement/AddProductDrawer";
 import { ProductManagementConstants } from "./constants";
 import { Product } from "./type";
-import { col } from "framer-motion/client";
 
 export default function Page() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
