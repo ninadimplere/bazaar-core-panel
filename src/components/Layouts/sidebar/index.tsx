@@ -1,27 +1,18 @@
 "use client";
 
-import { Logo } from "@components/logo";
 import { cn } from "@lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   ArrowLeftIcon,
   BazaarIcon,
-  OverviewIcon,
-  OrdersReturnsIcon,
-  ProductManagementIcon,
-  AnalyticsReportsIcon,
-  PromotionsDiscountsIcon,
-  CustomersIcon,
-  ChatsMessagesIcon,
-  ReviewsRatingsIcon,
   LogoutIcon,
   HelpIcon,
   SettingsIcon,
 } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
+import { sideNavMenuItems } from "./sidebar-content";
 
 const sidebarStyles = {
   container: "w-72 bg-gray-100 border-r border-gray-200 h-screen flex flex-col",
@@ -70,40 +61,7 @@ export function Sidebar() {
         {/* Navigation Items */}
         <nav className={sidebarStyles.nav}>
           <ul className={sidebarStyles.navList}>
-            {[
-              { href: "/overview", icon: OverviewIcon, label: "Overview" },
-              {
-                href: "/order-management",
-                icon: OrdersReturnsIcon,
-                label: "Orders & Returns",
-              },
-              {
-                href: "/product-management",
-                icon: ProductManagementIcon,
-                label: "Product Management",
-              },
-              {
-                href: "/analytics-reports",
-                icon: AnalyticsReportsIcon,
-                label: "Analytics/Reports",
-              },
-              {
-                href: "/promotions-discounts",
-                icon: PromotionsDiscountsIcon,
-                label: "Promotions & Discounts",
-              },
-              { href: "/customers", icon: CustomersIcon, label: "Customers" },
-              {
-                href: "/chats-messages",
-                icon: ChatsMessagesIcon,
-                label: "Chats & Messages",
-              },
-              {
-                href: "/review-ratings",
-                icon: ReviewsRatingsIcon,
-                label: "Review & Ratings",
-              },
-            ].map(({ href, icon: Icon, label }) => (
+            {sideNavMenuItems.map(({ href, icon: Icon, label }) => (
               <li key={href}>
                 <MenuItem as="link" href={href} isActive={pathname === href}>
                   <div className={sidebarStyles.menuItem}>

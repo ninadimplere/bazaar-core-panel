@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "name": "Electronics",
+    "parentName": null,
+    "slug": "electronics",
+    "subcategories": ["Mobile Phones", "Laptops", "Cameras"],
+    "productCount": 120,
+    "actions": ""
+  },
+  {
+    "id": 2,
+    "name": "Mobile Phones",
+    "parentName": "Electronics",
+    "slug": "mobile-phones",
+    "subcategories": ["Smartphones", "Feature Phones"],
+    "productCount": 80,
+    "actions": ""
+  },
+  {
+    "id": 3,
+    "name": "Smartphones",
+    "parentName": "Mobile Phones",
+    "slug": "smartphones",
+    "subcategories": [],
+    "productCount": 60,
+    "actions": ""
+  },
+  {
+    "id": 4,
+    "name": "Home Appliances",
+    "parentName": null,
+    "slug": "home-appliances",
+    "subcategories": ["Refrigerators", "Washing Machines"],
+    "productCount": 95,
+    "actions": ""
+  },
+  {
+    "id": 5,
+    "name": "Refrigerators",
+    "parentName": "Home Appliances",
+    "slug": "refrigerators",
+    "subcategories": [],
+    "productCount": 40,
+    "actions": ""
+  },
+  {
+    "id": 6,
+    "name": "Washing Machines",
+    "parentName": "Home Appliances",
+    "slug": "washing-machines",
+    "subcategories": [],
+    "productCount": 55,
+    "actions": ""
+  },
+  {
+    "id": 7,
+    "name": "Books",
+    "parentName": null,
+    "slug": "books",
+    "subcategories": ["Fiction", "Non-fiction", "Comics"],
+    "productCount": 70,
+    "actions": ""
+  }
+]

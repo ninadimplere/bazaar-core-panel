@@ -19,16 +19,17 @@
     ],
     "paths": {
       "@components/*": ["./src/components/*"],
-      "@lib/*": ["./src/lib/*"],
+      "@firebase/*": ["./src/firebase/*"],
+      "@services/*": ["./src/services/*"],
       "@assets/*": ["./src/assets/*"],
-      "@css/*": ["./src/css/*"],
+      "@/types/*": ["./src/types/*"],
       "@fonts/*": ["./src/fonts/*"],
       "@hooks/*": ["./src/hooks/*"],
-      "@js/*": ["./src/js/*"],
-      "@services/*": ["./src/services/*"],
-      "@/types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"],
-      "@app/*": ["./src/app/*"]
+      "@lib/*": ["./src/lib/*"],
+      "@css/*": ["./src/css/*"],
+      "@app/*": ["./src/app/*"],
+      "@js/*": ["./src/js/*"]
     },
     "target": "ES2017"
   },
